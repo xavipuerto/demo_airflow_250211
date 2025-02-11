@@ -10,19 +10,21 @@ Consolidar los datos en la tabla weather_consolidated.
 
 📌 Estructura del Proyecto
 
-/opt/emasesa/
-├── dags/                   # DAGs de Airflow
-│   ├── CA_meteo.py         # DAG con PythonOperators para llamadas API
-│   ├── CA_meteo_2.py       # DAG con BashOperators para ejecución de scripts
-├── script/                 # Scripts Python
-│   ├── fetch_weather.py    # Obtiene los datos de la API
-│   ├── store_weather.py    # Inserta los datos en la BD
-│   ├── consolidate_weather.py  # Consolida los datos
-├── logs/                   # Logs de ejecución
-│   ├── fetch_weather.log
-│   ├── store_weather.log
-│   ├── consolidate_weather.log
-└── README.md               # Documentación del proyecto
+📦 demo_airflow_250211
+├── 📂 dags/                # DAGs de Airflow
+│   ├── CA_meteo.py
+│   ├── CA_meteo_2.py
+│   ├── ca_meteo3.py
+│   └── ...
+├── 📂 script/              # Scripts auxiliares en Python
+│   ├── fetch_weather.py
+│   ├── store_weather.py
+│   ├── consolidate_weather.py
+│   └── store_weather_data.py
+├── 📄 docker-compose.yml    # Configuración de Docker para levantar Airflow
+├── 📄 .gitignore           # Archivos y carpetas ignorados por Git
+└── 📄 readme.md            # Documentación del proyecto
+
 
 ⚙️ Configuración del Entorno
 
@@ -81,7 +83,7 @@ CREATE TABLE public_api.weather_madrid (
     data JSONB NOT NULL,
     received_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-SELECT create_hypertable('public_api.weather_madrid', 'ts');
+
 
 CREATE TABLE public_api.weather_paris (
     id SERIAL PRIMARY KEY,
@@ -90,7 +92,6 @@ CREATE TABLE public_api.weather_paris (
     data JSONB NOT NULL,
     received_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-SELECT create_hypertable('public_api.weather_paris', 'ts');
 
 CREATE TABLE public_api.weather_consolidated (
     id SERIAL PRIMARY KEY,
