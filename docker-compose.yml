@@ -1,0 +1,106 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+     
+  timescaledb:
+    image: timescale/timescaledb-ha:pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres
+    ports:
+      - "5433:5432"  # Evitar conflictos con PostgreSQL
+    volumes:
+      - timescaledb-data:/var/lib/postgresql/data
+      - ./emasesa:/opt/emasesa:rw
+
+
+  redis:
+    image: redis:5-alpine
+
+  airflow-webserver:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: apache/airflow:2.10.5
+    depends_on:
+      - postgres
+      - redis
+      - airflow-init
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "true"
+      _AIRFLOW_WWW_USER_USERNAME: "admin"
+      _AIRFLOW_WWW_USER_PASSWORD: "admin"
+    volumes:
+      #- ./dags:/opt/airflow/dags
+      - /opt/emasesa/dags:/opt/airflow/dags:rw
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - /opt/emasesa/script:/opt/emasesa/script:rw
+      - /opt/emasesa/logs:/opt/emasesa/logs:rw
+    ports:
+      - "8080:8080"
+    command: >
+      bash -c "
+      airflow users create --username $${_AIRFLOW_WWW_USER_USERNAME} --password $${_AIRFLOW_WWW_USER_PASSWORD} --firstname Admin --lastname User --role Admin --email admin@example.com &&
+      airflow webserver
+      "
+
+  airflow-scheduler:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: apache/airflow:2.10.5
+    depends_on:
+      - postgres
+      - redis
+      - airflow-init
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "true"
+    volumes:
+      #- ./dags:/opt/airflow/dags
+      - /opt/emasesa/dags:/opt/airflow/dags:rw
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - /opt/emasesa/script:/opt/emasesa/script:rw
+      - /opt/emasesa/logs:/opt/emasesa/logs:rw
+    command: ["scheduler"]
+
+  airflow-init:
+    image: apache/airflow:2.10.5
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "true"
+    volumes:
+      #- ./dags:/opt/airflow/dags
+      - /opt/emasesa/dags:/opt/airflow/dags:rw
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - /opt/emasesa/script:/opt/emasesa/script:rw
+      - /opt/emasesa/logs:/opt/emasesa/logs:rw
+    entrypoint: ["airflow", "db", "init"]
+
+volumes:
+  postgres-db-volume:
+  timescaledb-data:
+
+networks:
+  airflow_network:
+    driver: bridge

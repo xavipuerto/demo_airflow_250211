@@ -1,0 +1,16 @@
+# Excluir logs y carpetas temporales
+logs/
+logs/*
+dags/__pycache__/
+plugins/
+datos/
+emasesa/
+sql/
+
+# Excluir archivos compilados de Python
+*.pyc
+__pycache__/
+
+# Excluir archivos de configuración o credenciales sensibles
+config.file
+.env
